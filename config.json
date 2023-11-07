@@ -1,0 +1,15 @@
+{
+    "database": {
+        "user": "My name is Giovanni Giorgio",
+        "password": "Nuh huh, I don't think so",
+        "host": "localhost",
+        "port": 3306,
+        "database_name": "drtest"
+    },
+    "misc": {
+        "antenna_threshold": 10,
+        "update_time": 20,
+        "weight_rssi": 0.05,
+        "weight_posture": 0.5
+    }
+}
