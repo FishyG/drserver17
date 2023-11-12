@@ -86,7 +86,6 @@ def get_global_score():
 		else:
 			# If the request to 17Studio's server fail
 			return "drserver17.com is kaput x_x"
-		
 	cursor.close()
 
 	return str(score)
@@ -162,8 +161,9 @@ def get_died():
 		cursor.execute("INSERT INTO death_count (`count`) VALUES(0)")
 
 	result = cursor.fetchone()
+	death_count = result[0]
 	cursor.close()
-	return str(result[0])
+	return str(death_count)
 
 @app.route("/scr/add_died.php", methods=['POST', 'GET'])
 def add_died():
@@ -180,8 +180,9 @@ def add_died():
 	cursor.execute("SELECT count FROM death_count")
 
 	result = cursor.fetchone()
+	death_count = result[0]
 	cursor.close()
-	return str(result[0])
+	return str(death_count)
 
 @app.route("/scr/get_mode_select.php", methods=['POST', 'GET'])
 def get_mode_select():
@@ -215,10 +216,10 @@ def add_online():
 	# Get the current number of user online
 	cursor.execute("SELECT COUNT(*) FROM online_users")
 	result = cursor.fetchone()
+	online_count = result[0]	
 	cursor.close()
  
-	return str(result[0])
-
+	return str(online_count)
 
 @app.route("/get_sale.php", methods=['POST', 'GET'])
 def get_sale():
