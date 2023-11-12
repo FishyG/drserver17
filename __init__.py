@@ -6,6 +6,7 @@ import sys
 import json
 import mariadb
 import bcrypt
+import datetime
 
 app = Flask(__name__)
 config_file = "config.json"
@@ -116,7 +117,7 @@ def find_nick_pass():
 		print("Using username and pass from my DB :)")
 		stored_password_hash = result[0]
 		salt = result[1]
-		
+		cursor.close()
 		# Compare the stored hashed password with the hashed provided password
 		if bcrypt.checkpw(password.encode('utf-8'), stored_password_hash.encode()):
 			return "true"
@@ -140,6 +141,7 @@ def find_nick_pass():
 				# Insert the username, password hash and salt into the table
 				cursor.execute("INSERT INTO user_credentials (user_name, password_hash, salt) VALUES (?, ?, ?)", (username, password_hash, salt))
 				db.commit()
+				cursor.close()
 			
 			# Return 17Studio's answer
 			return external_server_response.text
@@ -160,7 +162,7 @@ def get_died():
 		cursor.execute("INSERT INTO death_count (`count`) VALUES(0)")
 
 	result = cursor.fetchone()
-
+	cursor.close()
 	return str(result[0])
 
 @app.route("/scr/add_died.php", methods=['POST', 'GET'])
@@ -178,8 +180,45 @@ def add_died():
 	cursor.execute("SELECT count FROM death_count")
 
 	result = cursor.fetchone()
-
+	cursor.close()
 	return str(result[0])
+
+@app.route("/scr/get_mode_select.php", methods=['POST', 'GET'])
+def get_mode_select():
+	# This is shit, I need to do something that actually does something usefull
+	return '[["0","69"]]'
+
+@app.route("/scr/add_online.php", methods=['POST', 'GET'])
+def add_online():
+	username = request.args.get('n')
+	
+	if (username == '' or username is None) or not username.isalnum() or not username:
+		print ("Illegal username, no good")
+		return "0"
+
+	cursor = db.cursor()
+ 
+	# Add or update the user's last activity time
+	try:
+		cursor.execute("INSERT INTO online_users (username) VALUES (%s) ON DUPLICATE KEY UPDATE last_activity = CURRENT_TIMESTAMP", (username,))
+		db.commit()
+	except mariadb.ProgrammingError:
+		# If for some reason I fogor to create the table online_users
+		print("Creating TABLE online_users...")
+		cursor.execute("CREATE TABLE IF NOT EXISTS online_users (username VARCHAR(255), last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,PRIMARY KEY (username)")
+ 
+	# Remove users who haven't refreshed in the last 5 minutes
+	cutoff_time = datetime.datetime.now() - datetime.timedelta(minutes=config["misc"]["online_timeout"])
+	cursor.execute("DELETE FROM online_users WHERE last_activity < %s", (cutoff_time,))
+	db.commit()
+	
+	# Get the current number of user online
+	cursor.execute("SELECT COUNT(*) FROM online_users")
+	result = cursor.fetchone()
+	cursor.close()
+ 
+	return str(result[0])
+
 
 @app.route("/get_sale.php", methods=['POST', 'GET'])
 def get_sale():
